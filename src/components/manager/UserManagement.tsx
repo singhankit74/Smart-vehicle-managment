@@ -24,7 +24,7 @@ const UserManagement = () => {
 
     try {
       console.log('Creating user with role:', formData.role);
-      
+
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           fullName: formData.fullName,
@@ -55,8 +55,8 @@ const UserManagement = () => {
         phone: '',
         role: 'employee',
       });
-    } catch (error: any) {
-      toast.error(error?.message || 'Failed to create user account');
+    } catch (error: unknown) {
+      toast.error((error as Error)?.message || 'Failed to create user account');
     } finally {
       setLoading(false);
     }

@@ -61,7 +61,7 @@ const PendingRequests = ({ managerId }: Props) => {
       .order("created_at", { ascending: true });
 
     if (!error && data) {
-      setRequests(data as any);
+      setRequests(data as unknown as Request[]);
     }
     setLoading(false);
   };
@@ -82,8 +82,8 @@ const PendingRequests = ({ managerId }: Props) => {
 
       toast.success("Request approved successfully!");
       loadRequests();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to approve request");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Failed to approve request");
     } finally {
       setActionLoading(false);
     }
@@ -114,8 +114,8 @@ const PendingRequests = ({ managerId }: Props) => {
       setRejectionReason("");
       setSelectedRequest(null);
       loadRequests();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to reject request");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Failed to reject request");
     } finally {
       setActionLoading(false);
     }

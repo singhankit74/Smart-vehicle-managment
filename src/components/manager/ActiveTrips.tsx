@@ -56,7 +56,7 @@ const ActiveTrips = () => {
       .order("start_time", { ascending: false });
 
     if (!error && data) {
-      setTrips(data as any);
+      setTrips(data as unknown as Trip[]);
     }
     setLoading(false);
   };
@@ -138,28 +138,15 @@ const ActiveTrips = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-2">
+
+                  <div className="pt-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedPhoto(trip.start_meter_photo)}
-                      className="flex-1"
+                      className="w-full"
                     >
                       View Start Photo
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        window.open(
-                          `https://www.google.com/maps?q=${trip.start_location_lat},${trip.start_location_lng}`,
-                          "_blank"
-                        );
-                      }}
-                      className="flex-1"
-                    >
-                      <Navigation className="h-4 w-4 mr-1" />
-                      View Location
                     </Button>
                   </div>
                 </div>

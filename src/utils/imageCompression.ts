@@ -1,4 +1,5 @@
 import imageCompression from 'browser-image-compression';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Compression options for meter reading photos
@@ -20,18 +21,18 @@ const compressionOptions = {
 export const compressImage = async (file: File): Promise<File> => {
   try {
     console.log('Original file size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
-    
+
     const compressedFile = await imageCompression(file, compressionOptions);
-    
+
     console.log('Compressed file size:', (compressedFile.size / 1024).toFixed(2), 'KB');
-    
+
     // Create a new File object with the original name but compressed data
     const compressedFileWithName = new File(
       [compressedFile],
       file.name.replace(/\.[^/.]+$/, '.jpg'), // Change extension to .jpg
       { type: 'image/jpeg' }
     );
-    
+
     return compressedFileWithName;
   } catch (error) {
     console.error('Error compressing image:', error);
@@ -92,15 +93,15 @@ export const uploadCompressedImage = async (
   file: File,
   bucket: string,
   path: string,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<string> => {
   try {
     // Validate the file
     validateImageFile(file);
-    
+
     // Compress the image
     const compressedFile = await compressImage(file);
-    
+
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
       .from(bucket)
@@ -117,9 +118,10 @@ export const uploadCompressedImage = async (
       .getPublicUrl(data.path);
 
     return urlData.publicUrl;
-  } catch (error: any) {
+    return urlData.publicUrl;
+  } catch (error: unknown) {
     console.error('Error uploading compressed image:', error);
-    throw new Error(error.message || 'Failed to upload image');
+    throw new Error((error as Error).message || 'Failed to upload image');
   }
 };
 

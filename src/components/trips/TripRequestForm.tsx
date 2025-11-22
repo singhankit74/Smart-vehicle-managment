@@ -29,17 +29,22 @@ const TripRequestForm = ({ userId, onSuccess }: Props) => {
     try {
       // Get the current authenticated user
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         throw new Error("You must be logged in to submit a request");
       }
+
+      // Convert datetime-local to ISO string to preserve the exact time
+      // datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
+      // We need to convert it to a proper ISO timestamp
+      const expectedTimeISO = new Date(formData.expected_time).toISOString();
 
       const { error } = await supabase.from("trip_requests").insert({
         employee_id: user.id,
         vehicle_id: null, // Vehicle will be assigned by manager
         destination: formData.destination,
         purpose: formData.purpose,
-        expected_time: formData.expected_time,
+        expected_time: expectedTimeISO,
       });
 
       if (error) throw error;
@@ -51,8 +56,8 @@ const TripRequestForm = ({ userId, onSuccess }: Props) => {
         expected_time: "",
       });
       onSuccess();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to submit request");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Failed to submit request");
     } finally {
       setLoading(false);
     }

@@ -31,7 +31,7 @@ const Auth = () => {
 
       if (authData.user) {
         console.log("User logged in:", authData.user.id);
-        
+
         const { data: roles, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
@@ -46,9 +46,9 @@ const Auth = () => {
           throw roleError;
         }
 
-        const roleList = (roles || []).map((r: any) => r.role);
+        const roleList = (roles || []).map((r: { role: string }) => r.role);
         console.log("Role list:", roleList);
-        
+
         toast.success("Logged in successfully!");
 
         if (roleList.length === 0) {
@@ -71,8 +71,8 @@ const Auth = () => {
           await supabase.auth.signOut();
         }
       }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to login");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Failed to login");
     } finally {
       setLoading(false);
     }

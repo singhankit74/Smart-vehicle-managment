@@ -87,8 +87,8 @@ const VehicleManagement = () => {
       setShowDialog(false);
       resetForm();
       loadVehicles();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save vehicle");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Failed to save vehicle");
     } finally {
       setLoading(false);
     }
@@ -114,8 +114,8 @@ const VehicleManagement = () => {
       if (error) throw error;
       toast.success("Vehicle deleted successfully!");
       loadVehicles();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete vehicle");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Failed to delete vehicle");
     }
   };
 

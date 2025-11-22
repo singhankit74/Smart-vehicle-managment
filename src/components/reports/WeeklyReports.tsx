@@ -22,8 +22,8 @@ const WeeklyReports = () => {
   const [reportType, setReportType] = useState<'all' | 'vehicle' | 'employee'>('all');
   const [selectedVehicle, setSelectedVehicle] = useState<string>('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<{ id: string; name: string }[]>([]);
+  const [employees, setEmployees] = useState<{ id: string; full_name: string }[]>([]);
   const [stats, setStats] = useState({
     totalTrips: 0,
     completedTrips: 0,
@@ -33,55 +33,55 @@ const WeeklyReports = () => {
   const availableWeeks = getAvailableWeeks(12);
 
   useEffect(() => {
+    const fetchVehiclesAndEmployees = async () => {
+      try {
+        // Fetch vehicles
+        const { data: vehiclesData } = await supabase
+          .from('vehicles')
+          .select('id, name')
+          .order('name');
+
+        // Fetch employees
+        const { data: employeesData } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .order('full_name');
+
+        setVehicles(vehiclesData || []);
+        setEmployees(employeesData || []);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    const fetchWeekStats = async () => {
+      try {
+        const { start, end } = getWeekRange(selectedWeek);
+
+        const { data: trips } = await supabase
+          .from('trips')
+          .select('*')
+          .gte('start_time', start.toISOString())
+          .lte('start_time', end.toISOString());
+
+        if (trips) {
+          const completed = trips.filter(t => t.status === 'completed').length;
+          const totalDist = trips.reduce((sum, t) => sum + (t.distance || 0), 0);
+
+          setStats({
+            totalTrips: trips.length,
+            completedTrips: completed,
+            totalDistance: totalDist,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+
     fetchVehiclesAndEmployees();
     fetchWeekStats();
   }, [selectedWeek]);
-
-  const fetchVehiclesAndEmployees = async () => {
-    try {
-      // Fetch vehicles
-      const { data: vehiclesData } = await supabase
-        .from('vehicles')
-        .select('id, name')
-        .order('name');
-
-      // Fetch employees
-      const { data: employeesData } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .order('full_name');
-
-      setVehicles(vehiclesData || []);
-      setEmployees(employeesData || []);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  };
-
-  const fetchWeekStats = async () => {
-    try {
-      const { start, end } = getWeekRange(selectedWeek);
-
-      const { data: trips } = await supabase
-        .from('trips')
-        .select('*')
-        .gte('start_time', start.toISOString())
-        .lte('start_time', end.toISOString());
-
-      if (trips) {
-        const completed = trips.filter(t => t.status === 'completed').length;
-        const totalDist = trips.reduce((sum, t) => sum + (t.distance || 0), 0);
-
-        setStats({
-          totalTrips: trips.length,
-          completedTrips: completed,
-          totalDistance: totalDist,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
 
   const fetchTripData = async (): Promise<TripReportData[]> => {
     const { start, end } = getWeekRange(selectedWeek);
@@ -114,6 +114,7 @@ const WeeklyReports = () => {
 
     if (error) throw error;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (trips || []).map((trip: any) => ({
       id: trip.id,
       vehicle_name: trip.vehicle?.name || 'Not Assigned',
@@ -152,7 +153,7 @@ const WeeklyReports = () => {
       let filename = '';
 
       switch (reportType) {
-        case 'vehicle':
+        case 'vehicle': {
           if (!selectedVehicle) {
             toast.error('Please select a vehicle');
             return;
@@ -160,8 +161,9 @@ const WeeklyReports = () => {
           const vehicleName = vehicles.find(v => v.id === selectedVehicle)?.name || '';
           filename = exportVehicleWeeklyReport(trips, vehicleName, start, end);
           break;
+        }
 
-        case 'employee':
+        case 'employee': {
           if (!selectedEmployee) {
             toast.error('Please select an employee');
             return;
@@ -169,15 +171,16 @@ const WeeklyReports = () => {
           const employeeName = employees.find(e => e.id === selectedEmployee)?.full_name || '';
           filename = exportEmployeeWeeklyReport(trips, employeeName, start, end);
           break;
+        }
 
         default:
           filename = exportWeeklyReportToExcel(trips, start, end);
       }
 
       toast.success(`Report generated successfully: ${filename}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error generating report:', error);
-      toast.error(error.message || 'Failed to generate report');
+      toast.error((error as Error).message || 'Failed to generate report');
     } finally {
       setLoading(false);
     }
@@ -210,7 +213,7 @@ const WeeklyReports = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats.completedTrips}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.totalTrips > 0 
+              {stats.totalTrips > 0
                 ? `${((stats.completedTrips / stats.totalTrips) * 100).toFixed(0)}% completion rate`
                 : 'No trips yet'}
             </p>
@@ -268,7 +271,7 @@ const WeeklyReports = () => {
             <Label htmlFor="reportType">Report Type</Label>
             <Select
               value={reportType}
-              onValueChange={(value: any) => {
+              onValueChange={(value: 'all' | 'vehicle' | 'employee') => {
                 setReportType(value);
                 setSelectedVehicle('');
                 setSelectedEmployee('');

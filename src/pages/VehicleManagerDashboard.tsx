@@ -13,7 +13,7 @@ const VehicleManagerDashboardPage = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         navigate("/auth");
         return;
@@ -25,7 +25,7 @@ const VehicleManagerDashboardPage = () => {
         .select("role")
         .eq("user_id", user.id);
 
-      const roleList = (roles || []).map((r: any) => r.role);
+      const roleList = (roles || []).map((r: { role: string }) => r.role);
 
       // If user has admin, redirect to admin (highest precedence)
       if (roleList.includes("admin")) {

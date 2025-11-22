@@ -74,7 +74,7 @@ const AssignVehicles = ({ managerId }: Props) => {
       .order("name");
 
     if (!requestsError && requestsData) {
-      setRequests(requestsData as any);
+      setRequests(requestsData as unknown as Request[]);
     }
 
     if (!vehiclesError && vehiclesData) {
@@ -86,7 +86,7 @@ const AssignVehicles = ({ managerId }: Props) => {
 
   const handleAssign = async (requestId: string) => {
     const vehicleId = selectedVehicles[requestId];
-    
+
     if (!vehicleId) {
       toast.error("Please select a vehicle");
       return;
@@ -116,8 +116,8 @@ const AssignVehicles = ({ managerId }: Props) => {
 
       toast.success("Vehicle assigned successfully!");
       loadData();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to assign vehicle");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Failed to assign vehicle");
     } finally {
       setActionLoading(false);
     }

@@ -33,10 +33,6 @@ const MyTrips = ({ userId }: Props) => {
   const [requests, setRequests] = useState<TripRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadRequests();
-  }, [userId]);
-
   const loadRequests = async () => {
     const { data, error } = await supabase
       .from("trip_requests")
@@ -49,10 +45,15 @@ const MyTrips = ({ userId }: Props) => {
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      setRequests(data as any);
+      setRequests(data as unknown as TripRequest[]);
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    loadRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   if (loading) {
     return (
@@ -65,7 +66,7 @@ const MyTrips = ({ userId }: Props) => {
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">My Trip Requests</h2>
-      
+
       {requests.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -96,19 +97,19 @@ const MyTrips = ({ userId }: Props) => {
                     request.approval_status === "assigned"
                       ? "default"
                       : request.approval_status === "approved"
-                      ? "default"
-                      : request.approval_status === "rejected"
-                      ? "destructive"
-                      : "secondary"
+                        ? "default"
+                        : request.approval_status === "rejected"
+                          ? "destructive"
+                          : "secondary"
                   }
                   className={
                     request.approval_status === "assigned"
                       ? "bg-success text-success-foreground"
                       : request.approval_status === "approved"
-                      ? "bg-blue-500 text-white"
-                      : request.approval_status === "pending"
-                      ? "bg-warning text-warning-foreground"
-                      : ""
+                        ? "bg-blue-500 text-white"
+                        : request.approval_status === "pending"
+                          ? "bg-warning text-warning-foreground"
+                          : ""
                   }
                 >
                   {request.approval_status === "assigned" && <CheckCircle className="h-3 w-3 mr-1" />}

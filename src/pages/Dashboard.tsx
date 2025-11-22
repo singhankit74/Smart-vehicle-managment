@@ -16,7 +16,7 @@ const Dashboard = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         navigate("/auth");
         return;
@@ -34,7 +34,7 @@ const Dashboard = () => {
         console.error("Error fetching role:", roleError);
       }
 
-      const roleList = (roles || []).map((r: any) => r.role);
+      const roleList = (roles || []).map((r: { role: string }) => r.role);
 
       if (roleList.includes("admin")) {
         navigate("/admin/dashboard");

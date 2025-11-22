@@ -13,7 +13,7 @@ const EmployeeDashboardPage = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         navigate("/auth");
         return;
@@ -25,7 +25,7 @@ const EmployeeDashboardPage = () => {
         .select("role")
         .eq("user_id", user.id);
 
-      const roleList = (roles || []).map((r: any) => r.role);
+      const roleList = (roles || []).map((r: { role: string }) => r.role);
 
       // Redirect to higher precedence roles if present
       if (roleList.includes("admin")) {

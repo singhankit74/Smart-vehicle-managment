@@ -33,18 +33,18 @@ const TripTracker = ({ requestId, userId, onUpdate }: Props) => {
   const [endPhoto, setEndPhoto] = useState<File | null>(null);
 
   useEffect(() => {
+    const loadTrip = async () => {
+      const { data } = await supabase
+        .from("trips")
+        .select("*")
+        .eq("request_id", requestId)
+        .single();
+
+      if (data) setTrip(data);
+    };
+
     loadTrip();
   }, [requestId]);
-
-  const loadTrip = async () => {
-    const { data } = await supabase
-      .from("trips")
-      .select("*")
-      .eq("request_id", requestId)
-      .single();
-
-    if (data) setTrip(data);
-  };
 
   const getLocation = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
@@ -67,14 +67,14 @@ const TripTracker = ({ requestId, userId, onUpdate }: Props) => {
     try {
       // Get original file size
       const originalSize = file.size;
-      
+
       // Compress the image before uploading (silently)
       const compressedFile = await compressImage(file);
-      
+
       // Calculate savings for logging only
       const savings = calculateStorageSavings(originalSize, compressedFile.size);
       console.log(`Image compressed: ${savings.originalSizeMB}MB → ${savings.compressedSizeKB}KB (${savings.savingsPercentage}% saved)`);
-      
+
       // Upload compressed image
       const { data, error } = await supabase.storage
         .from("meter-photos")
@@ -84,16 +84,16 @@ const TripTracker = ({ requestId, userId, onUpdate }: Props) => {
         });
 
       if (error) throw error;
-      
+
       const { data: { publicUrl } } = supabase.storage
         .from("meter-photos")
         .getPublicUrl(data.path);
-      
+
       // No toast notification - keep it clean
       return publicUrl;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error uploading photo:", error);
-      throw new Error(error.message || "Failed to upload photo");
+      throw new Error((error as Error).message || "Failed to upload photo");
     }
   };
 
@@ -105,7 +105,6 @@ const TripTracker = ({ requestId, userId, onUpdate }: Props) => {
 
     setLoading(true);
     try {
-      const location = await getLocation();
       const photoUrl = await uploadPhoto(startPhoto, `start-${requestId}-${Date.now()}.jpg`);
 
       const { data } = await supabase
@@ -118,8 +117,8 @@ const TripTracker = ({ requestId, userId, onUpdate }: Props) => {
           start_time: new Date().toISOString(),
           start_meter_photo: photoUrl,
           start_reading: parseFloat(startReading),
-          start_location_lat: location.lat,
-          start_location_lng: location.lng,
+          start_location_lat: null,
+          start_location_lng: null,
         })
         .select()
         .single();
@@ -129,8 +128,8 @@ const TripTracker = ({ requestId, userId, onUpdate }: Props) => {
         toast.success("Trip started successfully!");
         onUpdate();
       }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to start trip");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Failed to start trip");
     } finally {
       setLoading(false);
     }
@@ -144,7 +143,6 @@ const TripTracker = ({ requestId, userId, onUpdate }: Props) => {
 
     setLoading(true);
     try {
-      const location = await getLocation();
       const photoUrl = await uploadPhoto(endPhoto, `end-${requestId}-${Date.now()}.jpg`);
       const distance = parseFloat(endReading) - (trip.start_reading || 0);
 
@@ -163,8 +161,8 @@ const TripTracker = ({ requestId, userId, onUpdate }: Props) => {
           end_time: new Date().toISOString(),
           end_meter_photo: photoUrl,
           end_reading: parseFloat(endReading),
-          end_location_lat: location.lat,
-          end_location_lng: location.lng,
+          end_location_lat: null,
+          end_location_lng: null,
           distance,
         })
         .eq("id", trip.id);
@@ -178,13 +176,13 @@ const TripTracker = ({ requestId, userId, onUpdate }: Props) => {
       }
 
       toast.success(`Trip completed! Distance: ${distance.toFixed(2)} km`);
-      
+
       // Auto-refresh the page after a short delay
       setTimeout(() => {
         window.location.reload();
       }, 1500);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to end trip");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Failed to end trip");
     } finally {
       setLoading(false);
     }
